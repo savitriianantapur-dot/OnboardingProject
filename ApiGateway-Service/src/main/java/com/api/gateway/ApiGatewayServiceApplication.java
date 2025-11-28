@@ -11,7 +11,10 @@ public class ApiGatewayServiceApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(ApiGatewayServiceApplication.class, args);
 		int i=10;
+
         int b=20;
+
+		String s="Savitri";
 	}
 
 }
