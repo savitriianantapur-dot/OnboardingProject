@@ -10,7 +10,7 @@ public class ApiGatewayServiceApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(ApiGatewayServiceApplication.class, args);
-		String s="Savitri";
+		
 		
 	}
 
