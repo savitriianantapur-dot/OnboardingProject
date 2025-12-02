@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  eureka-service:
+    image: onboarding/eureka-service:latest
+    container_name: eureka-service
+    restart: always
+    environment:
+      - SERVER_PORT=8761
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "8761:8761"
+    networks:
+      - onboard-net
+
+  auth-service:
+    image: onboarding/auth-service:latest
+    container_name: auth-service
+    restart: always
+    environment:
+      - SERVER_PORT=8080
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-service
+    networks:
+      - onboard-net
+
+  api-gateway-service:
+    image: onboarding/api-gateway-service:latest
+    container_name: api-gateway-service
+    restart: always
+    environment:
+      - SERVER_PORT=8764
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+    ports:
+      - "8764:8764"
+    depends_on:
+      - eureka-service
+    networks:
+      - onboard-net
+
+networks:
+  onboard-net:
+    driver: bridge
