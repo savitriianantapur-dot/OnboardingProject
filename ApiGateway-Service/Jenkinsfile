@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        SERVICE_DIR = "Auth-Service"
-        IMAGE_NAME = "auth-service-image"
-        CONTAINER_NAME = "auth-service"
+        SERVICE_DIR = "ApiGateway-Service"
+        IMAGE_NAME = "apigateway-service-image"
+        CONTAINER_NAME = "apigateway-service"
     }
 
     stages {

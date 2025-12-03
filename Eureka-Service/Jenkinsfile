@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        SERVICE_DIR = "Auth-Service"
-        IMAGE_NAME = "auth-service-image"
-        CONTAINER_NAME = "auth-service"
+        SERVICE_DIR = "Eureka-Service"
+        IMAGE_NAME = "eureka-service-image"
+        CONTAINER_NAME = "eureka-service"
     }
 
     stages {
