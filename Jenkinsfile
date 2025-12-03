@@ -65,9 +65,9 @@ pipeline {
             steps {
                 echo "Bringing down previous compose stack (if any) and starting up fresh"
                 // attempt to stop previous stack, ignore errors
-                sh "docker-compose -f ${COMPOSE_FILE} down || true"
+                sh "docker compose -f ${COMPOSE_FILE} down || true"
                 // build images from local tags and start
-                sh "docker-compose -f ${COMPOSE_FILE} up -d --build"
+                sh "docker compose -f ${COMPOSE_FILE} up -d --build"
             }
         }
 
@@ -76,7 +76,7 @@ pipeline {
                 echo "Show running containers"
                 sh "docker ps --format 'table {{.Names}}\\t{{.Image}}\\t{{.Ports}}' || true"
                 echo "Show compose status"
-                sh "docker-compose -f ${COMPOSE_FILE} ps || true"
+                sh "docker compose -f ${COMPOSE_FILE} ps || true"
             }
         }
     }
