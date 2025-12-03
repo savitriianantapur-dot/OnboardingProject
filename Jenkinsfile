@@ -3,7 +3,6 @@ pipeline {
 
     options {
         // keep logs reasonable; change as you like
-        ansiColor('xterm')
         timestamps()
     }
 
