@@ -1,108 +1,59 @@
-// Declarative Jenkinsfile to put in each microservice folder
 pipeline {
-  agent any
-  environment {
-    // change if you want different image prefix
-    IMAGE_PREFIX = "onboarding"
-    // set the compose file path on the workspace (repo root) if Jenkins checks out full repo
-    COMPOSE_FILE = "${WORKSPACE}/docker-compose.yml"
-    // This will be set in pipeline when run from service folder: e.g. ApiGateway-Service
-    SERVICE_DIR = "${env.SERVICE_DIR ?: ''}"
-  }
-  stages {
-    stage('Checkout') {
-      steps {
-        // Checkout full repo (so docker-compose.yml is available)
-        checkout scm
-        script {
-          // Determine folder name from current Jenkinsfile location if not provided
-          if (!env.SERVICE_DIR) {
-            // Example: if Jenkinsfile inside ApiGateway-Service, detect serviceDir
-            SERVICE_DIR = sh(script: "basename `pwd`", returnStdout: true).trim()
-            env.SERVICE_DIR = SERVICE_DIR
-          }
-          echo "Building service in: ${SERVICE_DIR}"
-        }
-      }
+    agent any
+
+    environment {
+        SERVICE_DIR = "Auth-Service"
+        IMAGE_NAME = "auth-service-image"
+        CONTAINER_NAME = "auth-service"
     }
 
-    stage('Build (Maven)') {
-      steps {
-        dir("${SERVICE_DIR}") {
-          // Use maven wrapper if present, else mvn
-          script {
-            if (fileExists('mvnw')) {
-              sh './mvnw -B -DskipTests clean package'
-            } else {
-              sh 'mvn -B -DskipTests clean package'
+    stages {
+
+        stage('Fix mvnw Permission') {
+            steps {
+                echo "Fixing mvnw execution permission..."
+                sh "chmod +x ${SERVICE_DIR}/mvnw"
             }
-          }
         }
-      }
-    }
 
-    stage('Build Docker Image') {
-      steps {
-        dir("${SERVICE_DIR}") {
-          script {
-            // short commit for image tag
-            def shortCommit = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-            def imageName = "${IMAGE_PREFIX}/${SERVICE_DIR.toLowerCase()}:${shortCommit}"
-            def latestName = "${IMAGE_PREFIX}/${SERVICE_DIR.toLowerCase()}:latest"
-
-            // Build image locally on EC2 (Jenkins host) — use sudo if needed
-            sh "sudo docker build -t ${imageName} ."
-            sh "sudo docker tag ${imageName} ${latestName}"
-            // Optionally remove older unused images (careful) - not done here
-            env.IMAGE_NAME = imageName
-            env.LATEST_NAME = latestName
-            echo "Built image ${imageName} and tagged as ${latestName}"
-          }
+        stage('Build (Maven)') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    echo "Building JAR..."
+                    sh "./mvnw -B -DskipTests clean package"
+                }
+            }
         }
-      }
-    }
 
-    stage('Deploy (docker-compose)') {
-      steps {
-        script {
-          // Compose up only this service so we don't restart others unnecessarily.
-          // Compose expects image: tags as configured in docker-compose.yml
-          // We will run `docker-compose up -d --no-deps <service>` to update single service
-          def serviceNameInCompose = ""
-          // Map folder names to compose service names (lowercase, hyphen optional)
-          if (SERVICE_DIR.toLowerCase().contains("eureka")) {
-            serviceNameInCompose = "eureka-service"
-          } else if (SERVICE_DIR.toLowerCase().contains("auth")) {
-            serviceNameInCompose = "auth-service"
-          } else if (SERVICE_DIR.toLowerCase().contains("api") || SERVICE_DIR.toLowerCase().contains("gateway")) {
-            serviceNameInCompose = "api-gateway-service"
-          } else {
-            // fallback — assume folder name + "-service"
-            serviceNameInCompose = "${SERVICE_DIR.toLowerCase()}-service"
-          }
-
-          // Copy latest built image into name expected by compose: onboarding/<service>:latest
-          // We already tagged :latest above, so docker-compose will pick it
-          // Ensure compose file exists at workspace root
-          if (!fileExists(COMPOSE_FILE)) {
-            error "docker-compose.yml not found at ${COMPOSE_FILE}. Ensure repo root contains it."
-          }
-
-          // Pull down and start only this service using compose (no dependencies)
-          sh "cd ${WORKSPACE} && sudo docker-compose -f ${COMPOSE_FILE} up -d --no-deps ${serviceNameInCompose}"
-          // Optionally show logs for a few lines
-          sh "sudo docker ps --filter name=${serviceNameInCompose} --no-trunc"
+        stage('Build Docker Image') {
+            steps {
+                echo "Building Docker image..."
+                sh "docker build -t ${IMAGE_NAME} ${SERVICE_DIR}"
+            }
         }
-      }
-    }
-  }
 
-  post {
-    success {
-      echo "Build & deploy succeeded for ${SERVICE_DIR}"
+        stage('Deploy to EC2 (Docker)') {
+            steps {
+                echo "Stopping old container..."
+                sh """
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm ${CONTAINER_NAME} || true
+                """
+
+                echo "Starting new container..."
+                sh """
+                    docker run -d --name ${CONTAINER_NAME} -p 8081:8081 ${IMAGE_NAME}
+                """
+            }
+        }
     }
-    failure {
-      echo "Build & deploy failed for ${SERVICE_DIR}"
+
+    post {
+        failure {
+            echo "Build failed!"
+        }
+        success {
+            echo "Build & Deployment successful!"
+        }
     }
-  }
 }
