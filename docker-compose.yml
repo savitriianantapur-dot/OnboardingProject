@@ -1,6 +1,9 @@
 version: "3.8"
 
 services:
+  # --------------------------
+  # Eureka Service
+  # --------------------------
   eureka-service:
     image: onboarding/eureka-service:latest
     container_name: eureka-service
@@ -13,16 +16,37 @@ services:
     networks:
       - onboard-net
 
+  # --------------------------
+  # Auth Service
+  # --------------------------
   auth-service:
     image: onboarding/auth-service:latest
     container_name: auth-service
     restart: always
     environment:
+      # Server
       - SERVER_PORT=8083
-      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/jwtable
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
+
+      # Eureka
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+
+      # Database (AWS RDS)
+      - SPRING_DATASOURCE_URL=jdbc:mysql://jwtable.cjws6ugu4hcy.eu-north-1.rds.amazonaws.com:3306/jwtable?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=savitri
+      - SPRING_DATASOURCE_PASSWORD=Savi#313
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+
+      # JPA
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_SHOW_SQL=true
+
+      # Email
+      - SPRING_MAIL_USERNAME=manage.dextris@gmail.com
+      - SPRING_MAIL_PASSWORD=pnba dujz lloz jhjj
+
+      # JWT
+      - JWT_SECRET=rrD8q94g8IrSIWCit7c6ngiNJC7bs+r2PhJz8eEIydJp/pDCkwScIqrCrJ8XCJMDFZValFM6nUUnv8FQMLUGNA==
+
     ports:
       - "8083:8083"
     depends_on:
@@ -30,6 +54,9 @@ services:
     networks:
       - onboard-net
 
+  # --------------------------
+  # API Gateway Service
+  # --------------------------
   api-gateway-service:
     image: onboarding/api-gateway-service:latest
     container_name: api-gateway-service
@@ -44,6 +71,63 @@ services:
     networks:
       - onboard-net
 
+# --------------------------
+# Network
+# --------------------------
 networks:
   onboard-net:
     driver: bridge
+
+
+# version: "3.8"
+
+# services:
+#   eureka-service:
+#     image: onboarding/eureka-service:latest
+#     container_name: eureka-service
+#     restart: always
+#     environment:
+#       - SERVER_PORT=8761
+#       - SPRING_PROFILES_ACTIVE=dev
+#     ports:
+#       - "8761:8761"
+#     networks:
+#       - onboard-net
+
+#   auth-service:
+#     image: onboarding/auth-service:latest
+#     container_name: auth-service
+#     restart: always
+#     environment:
+#       - SERVER_PORT=8083
+#       - SPRING_DATASOURCE_URL=jdbc:mysql://jwtable.cjws6ugu4hcy.eu-north-1.rds.amazonaws.com:3306/jwtable?useSSL=false&allowPublicKeyRetrieval=true
+#       - SPRING_DATASOURCE_USERNAME=savitri
+#       - SPRING_DATASOURCE_PASSWORD=Savi#313
+#       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+#       - SPRING_MAIL_USERNAME=manage.dextris@gmail.com
+#       - SPRING_MAIL_PASSWORD=YOUR_EMAIL_PASSWORD
+#       - JWT_SECRET=rrD8q94g8IrSIWCit7c6ngiNJC7bs+r2PhJz8eEIydJp/pDCkwScIqrCrJ8XCJMDFZValFM6nUUnv8FQMLUGNA==
+#     ports:
+#       - "8083:8083"
+#     depends_on:
+#       - eureka-service
+#     networks:
+#       - onboard-net
+
+#   api-gateway-service:
+#     image: onboarding/api-gateway-service:latest
+#     container_name: api-gateway-service
+#     restart: always
+#     environment:
+#       - SERVER_PORT=8764
+#       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+#     ports:
+#       - "8764:8764"
+#     depends_on:
+#       - eureka-service
+#     networks:
+#       - onboard-net
+
+# networks:
+#   onboard-net:
+#     driver: bridge
