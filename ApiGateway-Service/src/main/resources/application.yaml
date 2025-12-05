@@ -7,11 +7,13 @@ spring:
 
   cloud:
     gateway:
+      # Enable discovery locator for future dynamic services
       discovery:
         locator:
           enabled: true
+          lower-case-service-id: true
 
-      # ✅ Global CORS configuration (allows frontend -> Gateway calls)
+      # ✅ Global CORS configuration
       globalcors:
         corsConfigurations:
           '[/**]':
@@ -20,14 +22,8 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
 
+      # Only define routes for services that actually exist
       routes:
-        - id: STUDENT-SERVICE
-          uri: lb://STUDENT-SERVICE
-          predicates:
-            - Path=/students/**
-          filters:
-            - name: AuthFilter
-
         - id: AUTH-SERVICE
           uri: lb://AUTH-SERVICE
           predicates:
@@ -35,17 +31,12 @@ spring:
           filters:
             - name: AuthFilter
 
-        - id: DEPARTMENT-SERVICE
-          uri: lb://DEPARTMENT-SERVICE
-          predicates:
-            - Path=/departments/**
-          filters:
-            - name: AuthFilter
-
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
 
 jwt:
   secret: rrD8q94g8IrSIWCit7c6ngiNJC7bs+r2PhJz8eEIydJp/pDCkwScIqrCrJ8XCJMDFZValFM6nUUnv8FQMLUGNA==
@@ -56,3 +47,63 @@ management:
     web:
       exposure:
         include: "*"
+
+
+# server:
+#   port: 8764
+
+# spring:
+#   application:
+#     name: API-GATEWAY
+
+#   cloud:
+#     gateway:
+#       discovery:
+#         locator:
+#           enabled: true
+
+#       # ✅ Global CORS configuration (allows frontend -> Gateway calls)
+#       globalcors:
+#         corsConfigurations:
+#           '[/**]':
+#             allowedOrigins: "http://localhost:3000"
+#             allowedMethods: "*"
+#             allowedHeaders: "*"
+#             allowCredentials: true
+
+#       routes:
+#         - id: STUDENT-SERVICE
+#           uri: lb://STUDENT-SERVICE
+#           predicates:
+#             - Path=/students/**
+#           filters:
+#             - name: AuthFilter
+
+#         - id: AUTH-SERVICE
+#           uri: lb://AUTH-SERVICE
+#           predicates:
+#             - Path=/api/**,/user/**,/admin/**
+#           filters:
+#             - name: AuthFilter
+
+#         - id: DEPARTMENT-SERVICE
+#           uri: lb://DEPARTMENT-SERVICE
+#           predicates:
+#             - Path=/departments/**
+#           filters:
+#             - name: AuthFilter
+
+# eureka:
+#   client:
+#     service-url:
+#       defaultZone: http://localhost:8761/eureka/
+
+# jwt:
+#   secret: rrD8q94g8IrSIWCit7c6ngiNJC7bs+r2PhJz8eEIydJp/pDCkwScIqrCrJ8XCJMDFZValFM6nUUnv8FQMLUGNA==
+#   expiration: 3600000
+
+# management:
+#   endpoints:
+#     web:
+#       exposure:
+#         include: "*"
